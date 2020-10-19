@@ -1,3 +1,8 @@
+// Matheus Henrique Conceição Bonore 567779
+// Rafael Santos Souto Oliveira 571490
+
+// https://github.com/MatheusBonore/GraphQL-API
+
 const express = require('express');
 const expressGraphQL = require('express-graphql');
 const {
@@ -66,7 +71,7 @@ const RootQueryType = new GraphQLObjectType({
       type: BookType,
       description: 'A Single book',
       args: {
-        id: { type: GraphQLInt },
+        id: { type: GraphQLNonNull(GraphQLInt), },
       },
       resolve: (parent, args) => {
         return books.find(book => book.id === args.id);
@@ -77,20 +82,20 @@ const RootQueryType = new GraphQLObjectType({
       description: 'List of All Books',
       resolve: () => books,
     },
-    authors: {
-      type: new GraphQLList(AuthorType),
-      description: 'List of All Authors',
-      resolve: () => authors,
-    },
     author: {
       type: AuthorType,
       description: 'A Single author',
       args: {
-        id: { type: GraphQLInt },
+        id: { type: GraphQLNonNull(GraphQLInt), },
       },
       resolve: (parent, args) => {
         return authors.find(author => author.id === args.id);
       },
+    },
+    authors: {
+      type: new GraphQLList(AuthorType),
+      description: 'List of All Authors',
+      resolve: () => authors,
     },
   }),
 });
@@ -130,8 +135,26 @@ const RootMutationType = new GraphQLObjectType({
           name: args.name,
           authorId: args.authorId,
         };
-        books.findOneAndUpdate();
-        return true;
+        books.forEach((element, index) => {
+          if (element.id === book.id) {
+            books[index] = book;
+            return book;
+          }
+        });
+      },
+    },
+    removeBook: {
+      type: BookType,
+      description: 'Remove a book',
+      args: {
+        id: { type: GraphQLNonNull(GraphQLInt), },
+      },
+      resolve: (parent, args) => {
+        books.forEach((element, index) => {
+          if (element.id === args.id) {
+            return books.splice(index, 1);
+          }
+        });
       },
     },
     addAuthor: {
@@ -150,7 +173,43 @@ const RootMutationType = new GraphQLObjectType({
       },
     },
     changeAuthor: {
-
+      type: AuthorType,
+      description: 'Change an author',
+      args: {
+        id: { type: GraphQLNonNull(GraphQLInt), },
+        name: { type: GraphQLNonNull(GraphQLString), },
+      },
+      resolve: (parent, args) => {
+        const author = {
+          id: args.id,
+          name: args.name,
+        };
+        authors.forEach((element, index) => {
+          if (element.id == author.id) {
+            authors[index] = author;
+            return author;
+          }
+        });
+      },
+    },
+    removeAuthor: {
+      type: AuthorType,
+      description: 'Remove an author',
+      args: {
+        id: { type: GraphQLNonNull(GraphQLInt), },
+      },
+      resolve: (parent, args) => {
+        authors.forEach((element, index) => {
+          if (element.id === args.id) {
+            for (var i = books.length - 1; i >= 0; i--) {
+              if (books[i].id === element.authorId) {
+                books.splice(i, 1);
+              }
+            }
+            return authors.splice(index, 1);
+          }
+        });
+      },
     },
   }),
 });
